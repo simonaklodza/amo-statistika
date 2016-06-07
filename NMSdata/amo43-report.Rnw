@@ -1,0 +1,978 @@
+%% LyX 2.1.3 created this file.  For more info, see http://www.lyx.org/.
+%% Do not edit unless you really know what you are doing.
+\documentclass{article}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage[sc]{mathpazo}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+
+
+\bibliographystyle{alpha}
+
+
+\newenvironment{uzdevums}[1][\unskip]{%
+\vspace{3mm}
+\noindent
+\textbf{#1 uzdevums:}
+\noindent}
+{}
+
+\geometry{verbose,tmargin=2.5cm,bmargin=2.5cm,lmargin=2.5cm,rmargin=2.5cm}
+\setcounter{secnumdepth}{2}
+\setcounter{tocdepth}{2}
+\usepackage{url}
+\usepackage[unicode=true,pdfusetitle,
+bookmarks=true,bookmarksnumbered=true,bookmarksopen=true,bookmarksopenlevel=2,
+breaklinks=false,pdfborder={0 0 1},backref=false,colorlinks=false]
+{hyperref}
+\renewcommand{\abstractname}{Anotācija}
+\renewcommand{\figurename}{Attēls}
+\renewcommand{\tablename}{Tabula}
+\renewcommand{\refname}{Atsauces}
+\setlength{\parindent}{0cm}
+
+
+\hypersetup{
+pdfstartview={XYZ null null 1}}
+\begin{document}
+<<setup, include=FALSE, cache=FALSE>>=
+library(knitr)
+# set global chunk options
+opts_chunk$set(fig.path='figure/minimal-', fig.align='center', fig.show='hold')
+options(formatR.arrow=TRUE,width=90)
+@
+
+
+\title{43.\ AMO rezultāti (2016-04-24)}
+
+\author{}
+\date{}
+
+\maketitle
+
+\begin{abstract}
+Šajā dokumentā apkopoti 43.\ Atklātās matemātikas olimpiādes (AMO, 2016.g.\ 24.aprīlī) rezultātu kop\-sa\-vil\-ku\-mi; tostarp Jūsu re\v{g}iona, novada un skolas rezultāti, salīdzinot ar citiem re\v{g}ioniem, novadiem un skolām. Pārskata mērķis ir parādīt skolēnu aktivitāti, skolas iegūto punktu kopskaitu salīdzinot ar citām skolām atbilstoši re\v{g}ionam, urbanizācijas veidam un skolas tipam.  Dots Jūsu skolas rezultāts pa klasēm un uzdevumu tēmām,
+pilnībā pabeigto risinājumu īpatsvars kā arī skolas uzdevuma un kopvērtējuma korelācija.
+
+Pārskatā iekļautie kritēriji nepretendē uz vispusīgu skolu salīdzinājumu; tie
+ir neformāli, neatspoguļo nevienas institūcijas viedokli un {\bf nav
+izmantojami} skolu vai to interešu izglītības darba vērtēšanai. Ceram,
+ka te apkopotie dati dos rosinājumus
+Jūsu skolas ārpusklases matemātikas nodarbību plānošanā.
+NMS pateicas skolotājiem, pulciņu vadītājiem, ieinteresētajiem vecākiem par katru
+sagatavoto un uz AMO atsūtīto skolēnu. Ikviens
+olimpiādes dalībnieks palīdz veidot mūsu valsts izglītību visiem pieejamu un izcilu.
+\end{abstract}
+
+<<external-code, cache=FALSE, echo=FALSE>>=
+#setwd("C:/Users/kapsitis/workspace/ddgatve-problems/NMSData/data")
+require(plyr)
+require(ggplot2)
+require(grid)
+require(xtable)
+require(RColorBrewer)
+source("schoolUtilities.R")
+
+resultDf <- getAllResults()
+
+resultParSkolu <- resultDf[resultDf$RegNr == parRegNum,]
+parSkola <- resultParSkolu$Skola[1]
+parIzglitojamie <- resultParSkolu$Izglitojamie[1]
+parSkolasTips <- resultParSkolu$SkTips[1]
+parRegions <- resultParSkolu$Regions[1]
+parRegCode <- resultParSkolu$RegCode[1]
+parSkolasTipsDisplay <- getDisplaySkTips(parSkolasTips)
+parEstEligible <- getEstEligible(parSkolasTips, parIzglitojamie)
+parKlasuIntervals <- getKlasuIntervals(parSkolasTips)
+parRegionsDisplay <- getRegionsDisplay(parRegCode)
+parUrbanizacija <- resultParSkolu$Urbanizacija[1]
+parUrbanizacijaDisplay <- getUrbanizacijaDisplay(parUrbanizacija)
+
+parUrbAndTips <- getUrbAndTips(parUrbanizacija, parSkolasTips) 
+@
+
+\vspace{10px}
+{\bf Dati par skolu}
+
+Ja ievērojāt neprecizitātes, būsim pateicīgi par palīdzību to novēršanā (\texttt{nms@lu.lv}).
+
+\begin{itemize}
+\item {\bf Skolas nosaukums:} \Sexpr{parSkola}
+\item {\bf Re\v{g}istrācijas numurs:} \Sexpr{parRegNum}
+\item {\bf Kuras klases mācās skolā:} \Sexpr{parKlasuIntervals}
+\item {\bf Visu izglītojamo skaits:} \Sexpr{parIzglitojamie} skolēni
+\item {\bf $\mbox{No viņiem }\geq\mbox{ 5.\,klase}$:} \Sexpr{parEstEligible} (NMS novērtējums)
+\item {\bf Re\v{g}ions:} \Sexpr{parRegionsDisplay}
+\item {\bf Urbanizācijas tips:} \Sexpr{parUrbanizacijaDisplay}
+\item {\bf Mācību iestādes tips:} \Sexpr{parSkolasTipsDisplay}
+\end{itemize}
+
+
+
+\section{Aktivitātes vēsturisks salīdzinājums}
+
+Lai gan atklāto olimpiāžu vēsture sākās 1974.gadā, pilni dalībnieku saraksti
+ir pieejami, sākot ar 2008.gadu, bet punkti par visiem uzdevumiem -- sākot
+ar 2012.gadu. Tādēļ dalībnieku skaita dati un vizualizācijas
+doti par pēdējiem 9 gadiem. {\bf Attēlā \ref{fig:hist-by-gender}} redzama
+atsevišķi meiteņu un zēnu dalība katrā no gadiem. Slīpais teksts virs stabiņa
+parāda kopīgo dalībnieku skaitu.
+
+
+<<hist-by-gender, warning=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap={parFigHist}, dev='CairoPDF'>>=
+particByGender <- numeric(0)
+particByKlase <- numeric(0)
+for (i in 2008:2016) {
+  ddff <- getHistResults(sprintf("amo%d.csv",i))
+  particByGender <- c(particByGender, as.vector(table(ddff$Dzimums)))
+  particByKlase <- c(particByKlase, as.vector(table(ddff$KlaseFix)))
+}
+dimnames <- list(Dzimums=c("Female","Male"), Gads=as.character(2008:2016))
+counts <- matrix(particByGender,ncol=9,dimnames=dimnames)
+
+### HERE WE EXTRAPOLATE FOR YEAR 2013:
+#counts[1,6] <- round(946*(2876/1870))
+#counts[2,6] <- round(924*(2876/1870))
+###
+
+genderYearDf <- as.data.frame(as.table(counts))
+
+p <- ggplot(genderYearDf, aes(Gads, Freq, fill=Dzimums)) +
+  geom_bar(stat="identity", position="dodge",
+           colour="black", width=.8, size=0.2) +
+
+  geom_text(aes(label=Freq, color=Dzimums),
+            position=position_dodge(width=0.9),
+#            color="#4B0082",
+            size=3, angle = 90, hjust = -0.3, fontface="plain") +
+
+   theme(text = element_text(size=10),
+        plot.title = element_text(size=12),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        plot.margin=unit(c(0,0,0,0),"mm"),
+        axis.title.y=element_text(angle=90, margin = margin(1,3,1,1)),
+        panel.background=element_blank(),
+        panel.grid.minor.y = element_line(colour = "black", linetype = "dotted", size=0.2),
+        panel.grid.major.y = element_line(colour = "black", linetype = "solid", size=0.2),
+        plot.background=element_blank(),
+        axis.text.x = element_text(angle = 0, hjust=0.5, margin=margin(-10,0,0,0))
+  ) +
+  guides(fill = guide_legend(title = "Dzimums",
+                             title.theme = element_text(size=11, face="plain", colour = "black", angle = 0))) +
+  ylab("Dal\u012Bbnieku skaits")
+
+
+ddff1 <- aggregate(Freq ~ Gads, genderYearDf, sum)
+ddff2 <- aggregate(Freq ~ Gads, genderYearDf, max)
+textDf <- data.frame(gads = 2008:2016, x1 = 1:9)
+textDf$y1 <- ddff2$Freq + 280
+textDf$label1 <- ddff1$Freq
+
+for (ii in 1:length(textDf$label1)) {
+  p <- p + annotation_custom(
+    grob = textGrob(label = textDf$label1[ii],
+                    hjust = 0.5,
+                    rot = 18,
+                    gp = gpar(cex = 0.8, col="black", fontface="bold")),
+    ymin = textDf$y1[ii],
+    ymax = textDf$y1[ii],
+    xmin = textDf$x1[ii],
+    xmax = textDf$x1[ii]
+  )
+}
+
+
+p <- p + theme(plot.margin = unit(c(10,4,0,4), "mm"))
+gt <- ggplot_gtable(ggplot_build(p))
+gt$layout$clip[gt$layout$name == "panel"] <- "off"
+grid.draw(gt)
+@
+
+
+
+{\bf Attēls \ref{fig:hist-by-klase}} parāda dalībnieku proporcijas pa klasēm.
+Līdz pat 2011.gadam skolu vecākajās klasēs vēl pilnā mērā neatspoguļojās demogrāfiskā bedre,
+t.i.\ krasa dzimstības pazemināšanās 1990-to gadu sākumā. Tādēļ atšķirības starp klasēm
+nav tik izteiktas, jo vecākajās klasēs bija salīdzinoši vairāk skolēnu.
+Nesenāko gadu rezultāti parāda, ka olimpiāžu dalībnieku skaits monotoni sarūk, pieaugot klasei.
+Skolas vecuma bērni parasti masveidā nepamet valsti, tādēļ dalības sarukums var būt saistāms
+ar skolēnu specializāciju (olimpiādēs piedalās niecīgs skaits arodvidusskolu un tehnikumu audzēkņu),
+iespējams, arī ar jauniešu vilšanos matemātiskajā izglītībā, kas pamazām pieaug, turpinot
+mācības vecākajās klasēs.
+
+
+<<hist-by-klase, warning=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap={parFigHistGrade}, dev='CairoPDF'>>=
+dimnames <- list(
+  Klase=c("5.kl.","6.kl.","7.kl.","8.kl.","9.kl.","10.kl.","11.kl.","12.kl."),
+  Gads=as.character(2008:2016))
+counts <- matrix(particByKlase,ncol=9,dimnames=dimnames)
+klaseYearDf <- as.data.frame(as.table(counts))
+gaduSummas <- aggregate(Freq ~ Gads, klaseYearDf, sum)
+#gaduSummas <- rename(gaduSummas, c("Freq"="FreqByYear"))
+names(gaduSummas)[names(gaduSummas)=="Freq"] <- "FreqByYear"
+klaseYearDf <- merge(klaseYearDf, gaduSummas, by.x = "Gads", by.y = "Gads")
+klaseYearDf <- mutate(klaseYearDf, propklase=Freq/FreqByYear)
+
+
+p <- ggplot(klaseYearDf, aes(Gads, propklase, fill=Klase)) +
+  geom_bar(stat="identity",
+           colour="black", width=.8, size=0.2) +
+  theme(text = element_text(size=10),
+        plot.title = element_text(size=12),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        plot.margin=unit(c(0,0,0,0),"mm"),
+        axis.title.y=element_text(angle=90, margin = margin(1,3,1,1)),
+        panel.background=element_blank(),
+        panel.grid.minor.y = element_line(colour = "black", linetype = "dotted", size=0.2),
+        panel.grid.major.y = element_line(colour = "black", linetype = "solid", size=0.2),
+        plot.background=element_blank(),
+        axis.text.x = element_text(angle = 0, hjust=0.5, margin=margin(-10,0,0,0))
+  ) +
+  ylab("Dal\u012Bbnieku proporcijas pa klas\u0113m")
+
+textDf <- klaseYearDf
+textDf$x1 <- rep(1:9, each=8)
+textDf <- mutate(textDf, label1 = paste0(round(100*propklase, digits=2), "%"))
+cumSums <- sapply(2008:2016, function(gg) {
+  return(cumsum(textDf$propklase[textDf$Gads == gg]))
+})
+textDf$y1 <- as.vector(cumSums) - textDf$propklase/2
+
+for (ii in 1:length(textDf$label1)) {
+  p <- p + annotation_custom(
+    grob = textGrob(label = textDf$label1[ii],
+                    hjust = 0.5,
+                    rot = 0,
+                    gp = gpar(cex = 0.6, col="white", fontface="bold")),
+    ymin = textDf$y1[ii],
+    ymax = textDf$y1[ii],
+    xmin = textDf$x1[ii],
+    xmax = textDf$x1[ii]
+  )
+}
+
+p
+@
+
+
+Savāktos punktus salīdzinām pēc dzimuma. Salīdzināšanai izmantojam
+pašas olimpiādes gala vērtējumus -- aprēķinām iegūto punktu vidējo vērtību starpību.
+(Demogrāfisko grupu atšķirību mērīšanai dažādos testos mēdz lietot arī
+citas pieejas: visu dalībnieku punktu skaitu normalizē, atņemot vidējo vērtību un dalot ar
+standartnovirzi vai arī izmantojo kādu parametrizētu modeli.\cite{NCES2015,Reardon2007})
+
+Ja $X_M^{gk}$ un  $X_Z^{gk}$ ir visu
+meiteņu un attiecīgi visu zēnu iegūtie punkti (konkrētā klasē un konkrētā mācību gadā),
+tad aplūkojam vidējo vērtību starpības visiem gadiem $g$ un klasēm $k$:
+\[ \left\{ M(X_M^{gk}) - M(X_Z^{gk}) \;|\; g \in \overline{2008,2016}, k \in \overline{5,12} \right\} \]
+{\bf Attēls \ref{fig:total-by-gender}} ir tabula ar intensitātes karti (``heat-map''), kur lauciņi iekrāsoti atkarībā no starpības lieluma.
+Redzam, ka jaunākajās klasēs (5.--9.kl.) šīs attiecības parasti ir nelielas, reizēm rezultāti
+ir aptuveni vienādi, reizēm zēni apsteidz meitenes par 1-3 punktiem.
+Vecākajās klasēs atsevišķos mācību gados atšķirības kļūst ievērojamas.
+Piemēram, 2016.g. 11.klasē ``$-6.40$'' nozīmē, ka meiteņu vidējais rezultāts atpaliek
+no zēnu vidējā rezultāta par 6.4 punktiem (kas nozīmē, ka viņu darbos
+nav izrēķināts vairāk nekā pusuzdevums) -- 11.klases zēnu vidējais
+punktu skaits šī gada olimpiādē bija 15.02 punkti (133 skolnieki), bet 11.klases meiteņu vidējais
+punktu skaits bija 8.62 punkti (100 skolnieces) -- gandrīz divas reizes mazāk.
+
+11.klases zēnu un meiteņu punktu starpība ir īpaši izteikta 
+skolās, kurās olimpiādē iegūtais punktu skaits ir salīdzinoši liels. Piemēram, Rīgas Valsts 1.\ \v{g}imnāzijā
+17 meiteņu vidējais rezultāts ir 17.06 punkti, bet 31 zēnam vidējais rezultāts
+ir 28.06. T.i.\ tas ir lielāks jau par 11 punktiem. 
+%%(T.sk.\ par algebras uzdevumu ({\bf 11.3}) dzimumu starpība ir 1 punkts, par \v{g}eometriju ({\bf 11.4}) 1 punkts, 
+%%par kombinatoriku ({\bf 11.5}) 2 punkti, par skaitļu teoriju ({\bf 11.2}) 4 punkti, 
+%%par skolas uzdevumu ({\bf 11.1}) 3 punkti -- 
+%%visos gadījumos par labu zēniem.)
+
+
+
+<<total-by-gender, warning=FALSE, echo=FALSE, fig.width=5.5, fig.height=4, fig.cap={parFigGenderDifference}, dev='CairoPDF'>>=
+myPalette <- colorRampPalette(rev(brewer.pal(11, "Spectral")), space="Lab")
+
+totalForFemales <- numeric(0)
+totalForMales <- numeric(0)
+totalForAll <- numeric(0)
+for (i in 2008:2016) {
+  ddff <- getHistResults(sprintf("amo%d.csv",i))
+  ttotals <- aggregate(Summa ~ Dzimums + KlaseFix, ddff, mean)
+  allTotals <- aggregate(Summa ~ KlaseFix, ddff, mean)
+  totalForFemales <- c(totalForFemales, ttotals$Summa[ttotals$Dzimums == "Female"])
+  totalForMales <- c(totalForMales, ttotals$Summa[ttotals$Dzimums == "Male"])
+  totalForAll <- c(totalForAll, allTotals$Summa)
+  grades <- 5:12
+}
+genderDiffDf <- data.frame(Gads = rep(2008:2016, each=8), Grade = grades,
+                           FemalePoints = totalForFemales, MalePoints = totalForMales,
+                           AllPoints = totalForAll)
+genderDiffDf <- mutate(genderDiffDf, GenderDiff = FemalePoints - MalePoints)
+
+
+
+p <- ggplot(genderDiffDf, aes(Gads, Grade)) +
+  geom_tile(aes(fill = GenderDiff)) +
+  scale_fill_gradientn(colours = myPalette(38)[1:18]) +
+#  coord_equal() +
+  theme(text = element_text(size=10),
+        plot.title = element_text(size=12),
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        plot.margin=unit(c(0,0,0,0),"mm"),
+        axis.title.y=element_text(angle=90, margin = margin(1,3,1,1)),
+        panel.background=element_blank(),
+        plot.background=element_blank(),
+        axis.text.x = element_text(angle = 0, hjust=0.5, margin=margin(0,0,0,0))
+  ) +
+    xlab("Gads") +
+    ylab("Klase") +
+  scale_x_discrete(limits=2008:2016, breaks=2008:2016) +
+  scale_y_discrete(limits=5:12, breaks=5:12) +
+  guides(fill = guide_legend(title = "VidPunkti(M.) - \nVidPunkti(Z.)",
+                             title.theme = element_text(size=8, face="plain", colour = "darkred", angle = 0)))
+
+
+getTextColor <- function(gdis) {
+  vv <- sapply(gdis, function(gdi) {
+    if (gdi <= -4) {
+      return("white")
+    } else {
+      return("black")
+    }
+  })
+  return(vv)
+}
+
+textDf <- genderDiffDf
+textDf <- mutate(textDf, label1 = sprintf("%2.2f",GenderDiff))
+textDf <- mutate(textDf, textColor = getTextColor(GenderDiff))
+
+for (ii in 1:length(textDf$label1)) {
+  p <- p + annotation_custom(
+    grob = textGrob(label = textDf$label1[ii],
+                    hjust = 0.5,
+                    rot = 0,
+                    gp = gpar(cex = 0.6, col=textDf$textColor[ii], fontface="bold")),
+    ymin = textDf$Grade[ii],
+    ymax = textDf$Grade[ii],
+    xmin = textDf$Gads[ii],
+    xmax = textDf$Gads[ii]
+  )
+}
+
+
+
+p <- p + theme(plot.margin = unit(c(10,4,4,4), "mm"))
+gt <- ggplot_gtable(ggplot_build(p))
+gt$layout$clip[gt$layout$name == "panel"] <- "off"
+grid.draw(gt)
+@
+
+
+%%Var izveidot "heatmap" stila tabuliņas, kur redzamas
+%%sieviešu/vīriešu proporciju atšķirības pa klasēm,
+%%pa regioniem, pa urbanizācijas un skolu tipiem.
+%%Nu un arī katrā no šiem gadījumiem -- pa gadiem.
+
+
+
+\section{Aktivitātes \v{g}eogrāfisks salīdzinājums}
+
+\subsection{Aktivitāte valsts re\v{g}ionos}
+
+Dalības procenti katrā no 19 re\v{g}ioniem doti {\bf attēlā \ref{fig:regional-activity}}. Re\v{g}ioni ietver
+visas 6 Rīgas priekšpilsētas, pārējās 8 lielās pilsētas (L.p.) kā arī 5 novadus (ārpus L.p.).
+5.--12.klašu skolēnu skaits re\v{g}ionos zināms no IZM sagatavotā pārskata\cite{IZM2016}. Dalības procents katrā no re\v{g}ioniem iegūts, dalot AMO dalībnieku skaitu no visām attiecīgā
+re\v{g}iona skolām ar kopīgo izglītojamo skaitu, kas ir tajās klašu grupās, kas
+varētu piedalīties olimpiādē.
+
+
+<<regional-activity, warning=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap={parFigA}, dev='CairoPDF'>>=
+
+getRegionParticipation <- function() {
+  # count participants in every of the 19 regions
+  murr <- count(resultDf, c("RegCode"))
+  # get additional info on regions
+  regDfReduced <- getRegDfReduced()
+  newMurr <- merge(murr, regDfReduced, by.x = "RegCode", by.y = "RegCode")
+  newMurr <- mutate(newMurr, Daliba = freq/RegDalEstimate)
+}
+
+
+###############################
+### DALĪBAS % REĢIONOS ########
+###############################
+regionParticipation <- getRegionParticipation()
+regionParticipation <- mutate(regionParticipation, DispDaliba = round(Daliba*100,digits=2))
+
+
+fontFaces <- rep("plain", nrow(regionParticipation))
+oRP <- regionParticipation[with(regionParticipation, order(-Daliba)),]
+fontFaces[which(oRP$RegCode == parRegCode)] <- "bold"
+
+avgParticipation <- 100*sum(regionParticipation$freq)/
+  sum(regionParticipation$RegDalEstimate)
+dispAvgParticipation <- paste0(round(avgParticipation, digits=2),"%")
+segmentDf <- data.frame(x1 = 0.5,
+                        x2 = nrow(regionParticipation) + 0.5,
+                        y1 = avgParticipation, y2 = avgParticipation)
+textDf <- data.frame(x1 = rep(nrow(regionParticipation)+1.4,2),
+                     y1 = avgParticipation + c(0.15,-0.15),
+                     label1 = c(dispAvgParticipation,"(vid.)"))
+
+p <- ggplot(regionParticipation,
+            aes(x=reorder(Regions19, -Daliba), y=Daliba*100)) +
+  #  geom_bar(stat="identity", fill="#808080", colour="black", width=.5) +
+  geom_bar(stat="identity",aes(fill = RegCode == parRegCode ),
+           colour="black", width=.5, size=0.3) +
+#  labs(title = "Aktivit\u0101te valsts re\u01E7ionos") +
+  geom_segment(aes(x = x1, y = y1, xend = x2, yend = y2), colour = "red", size=0.5, data = segmentDf) +
+  geom_text(aes(label=DispDaliba),
+            position=position_dodge(width=0.9),
+            color="#4B0082",
+            size=3, angle = 90, hjust = -0.3, fontface="bold") +
+  theme(text = element_text(size=10),
+        plot.title = element_text(size=12),
+        legend.position="none",
+        axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_text(angle=90, margin = margin(1,3,1,1)),
+        panel.background=element_blank(),
+        panel.grid.minor.y = element_line(colour = "black", linetype = "dotted", size=0.2),
+        panel.grid.major.y = element_line(colour = "black", linetype = "solid", size=0.2),
+        plot.background=element_blank(),
+        axis.text.x = element_text(angle = -30, vjust = 1.2, hjust=0, face=fontFaces)
+  ) +
+  scale_fill_manual(values = c("#808080", "#90EE80") ) +
+  ylab("Aktivit\u0101tes % no visiem 5.-12.kl. skol\u0113niem")
+
+
+for (ii in 1:length(textDf$label1)) {
+  p <- p + annotation_custom(
+    grob = textGrob(label = textDf$label1[ii],
+                    hjust = 0.5, gp = gpar(cex = 0.6, col="red")),
+    ymin = textDf$y1[ii],
+    ymax = textDf$y1[ii],
+    xmin = textDf$x1[ii],
+    xmax = textDf$x1[ii]
+  )
+}
+
+p <- p + theme(plot.margin = unit(c(0.6,1.8,0,0.4), "cm"))
+gt <- ggplot_gtable(ggplot_build(p))
+gt$layout$clip[gt$layout$name == "panel"] <- "off"
+grid.draw(gt)
+@
+
+%% Mainīga platuma stabiņi (norādīti dzimumu īpatsvari 19 apgabalos).
+%% Stabiņos dilstošs meiteņu īpatsvars.
+
+\subsection{Kā noteikts 5.--12.kl. izglītojamo skaits skolās}
+
+Par "aktivitāti" saucam olimpiādes dalībnieku
+skaita attiecību pret visu izglītojamo
+skaitu attiecīgajā skolā vai re\v{g}ionā, kas varētu piedalīties
+olimpiādē (t.i.\ 5.--12.klašu audzēkņi vai arī profesionālo vidusskolu un
+tehnikumu audzēkņi, kuru klases jeb kursus numurē citādi, bet kuri tāpat apgūst
+vispārējās vidējās izglītības programmu.)
+
+19 re\v{g}ionu līmenī skolēnu skaits katrā klašu grupā ir zināms no IZM apkopotās
+statistikas, bet skolu līmenī mums šādu datu nav.
+Pārskata veidotāji neprot uzzināt, cik skolēnu mācās katras konkrētas
+skolas 5.--12.klasēs, t.i.\ cik katrā skolā ir potenciālo AMO dalībnieku.
+Lai iegūtu audzēkņu skaita novērtējumu, izmantojām divas citas pieejas:
+
+\begin{itemize}
+\item Re\v{g}istrācijas brīdī skolu amatpersonas varēja
+iesūtīt NMSam 5.--12.klašu audzēkņu skaita novērtējumu.
+\item IZM mājaslapā ir statistikas sadaļa, kur norādīts kopīgais audzēkņu skaits.\cite{IZM2016Kontakti}
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%
+%% INTERNAL USE ONLY %%
+%%%%%%%%%%%%%%%%%%%%%%%
+
+%5.--12.klašu skolēnu skaitu uzzinām
+%pēc pašas skolas sniegtajiem datiem, bet ja šādu datu nav, izmantojam
+%novērtējumu (reizinot visu izglītojamo skaitu ar skolas tipam raksturīgu koeficientu).
+%Dažām skolām 5.-12.klašu novērtējums izskatās vai nu pārāk novirzīts no
+%IZM norādītā skolēnu skaita (vai arī re\v{g}istrācijas formā
+%iekļautais jautājums, iespējams, ir pārprasts un olimpiādes vecuma skolēnu
+%skaita vietā norādīts visu skolēnu skaits -- skolu tipiem, kuriem šie abi
+%skaitļi būtiski atšķiras.) {\bf Tabulā \ref{tab:ignoredEstimates}}
+%apkopots skolu saraksts, kur skolas sniegtā novērtējuma
+%vietā tomēr izmantojam ekstrapolāciju no VISC statistikas.
+
+
+
+%<<ignoredEstimates, warning=FALSE, results="asis", echo=FALSE>>=
+%ddd <- mutate(resultDf, RelError = (Est5To12 - MaxDalEstimate)/MaxDalEstimate)
+%ddd <- ddd[ddd$RelError != -1 & (ddd$RelError < -1/2 | ddd$RelError > 1/3),]
+%strangeEst <- aggregate(cbind(RegNr, Izglitojamie,Est5To12,MaxDalEstimate,RelError) ~ Skola, ddd, mean)
+%strangeEst <- strangeEst[with(strangeEst, order(RelError)),
+%                         c("Skola", "RegNr", "Izglitojamie", "Est5To12", "MaxDalEstimate")]
+%
+%strangeEst <- mutate(strangeEst, SkolaDisp = getShortName(RegNr))
+%testMatrix <- matrix(c(as.character(strangeEst$SkolaDisp),
+%                       as.character(strangeEst$RegNr),
+%                       as.character(strangeEst$Izglitojamie),
+%                       as.character(strangeEst$Est5To12),
+%                       as.character(strangeEst$MaxDalEstimate)
+%                       ), ncol = 5)
+%noShow <- getNoShowSkolas(parRegCode)
+%xt <- xtable(testMatrix,
+%             caption = "Skolas, kur\u0101m izmantojam NMS novertejumu",
+%             label = "tab:ignoredEstimates",
+%             align="rllrrr")
+%names(xt) <- c("Skola","Reg.Nr.","Visi","5-12(Sk.)","5-12(NMS)")
+%xt <- capture.output(xt)
+%cat(xt, sep="\n")
+%@
+
+
+
+Skolu salīdzinājums Jūsu re\v{g}ionā dots {\bf Tabulā \ref{tab:ratingRegion}}.
+Tabulai ir sekojošas kolonnas: {\bf Punkti} -- skolas iegūto punktu skaits,
+{\bf Dal.} -- dalībnieku skaits, {\bf Vid.} -- cik punktu ieguvis vidēji
+viens skolas dalībnieks, {\bf Aktiv.} -- aktivitātes procents,
+{\bf Meitenes} -- meiteņu skaits no visiem dalībniekiem.
+
+
+<<ratingRegion, warning=FALSE, results="asis", echo=FALSE>>=
+resultDfRegion <- resultDf[resultDf$RegCode == parRegCode,]
+tableDf <- count(resultDfRegion, c("Skola","RegNr", "EstUltimate","Daliba", "Intensity"))
+tableDf <- mutate(tableDf, PunktuSumma = getPunktiTotalForSkola(RegNr))
+tableDf <- mutate(tableDf, VidPunkti = round(PunktuSumma/freq, digits=2))
+#tableDf <- mutate(tableDf, Daliba = round(100*freq/EstUltimate, digits=2))
+tableDf <- mutate(tableDf, Meitenes = getMeitenesForSkola(RegNr))
+
+tableDf$Skola <- as.character(tableDf$Skola)
+tableDf <- mutate(tableDf, SkolaDisp = getShortName(RegNr))
+
+tableDf <- tableDf[with(tableDf, order(-PunktuSumma,-freq)),]
+
+numLines <- nrow(tableDf)
+testMatrix <- matrix(c(as.character(tableDf$SkolaDisp),
+                       as.character(tableDf$PunktuSumma),
+                       as.character(tableDf$freq),
+                       sprintf("%2.2f",tableDf$VidPunkti),
+                       sprintf("%2.2f%%",100*tableDf$Intensity),
+                       tableDf$Meitenes), ncol = 6)
+xt <- xtable(testMatrix,
+             caption = "Regiona skolu saraksts",
+             label = "tab:ratingRegion",
+             align="rlrrrrr")
+names(xt) <- c("Nosaukums","Punkti","Dal.","Vid.","Aktiv.","Meitenes")
+xt <- capture.output(xt)
+ourRowNums <- which(testMatrix[,1] == parSkola)
+if (length(ourRowNums) > 0) {
+  ourRow <- ourRowNums[1]
+  xt_mod <- gsub(
+    pattern = paste0("(^\\s*", ourRow, ")\\s*&\\s*([^&]+)\\s+&\\s+([\\-\\.0-9]+)\\s+&\\s+([\\-\\.0-9]+)\\s+&\\s+([\\-\\.0-9]+)\\s+&\\s+([\\\\%\\-\\.0-9]+)\\s+&\\s+([0-9]+ no [0-9]+)"),
+    replacement = "{\\\\bf \\1} & {\\\\bf \\2} & {\\\\bf \\3} & {\\\\bf \\4} & {\\\\bf \\5} & {\\\\bf \\6} & {\\\\bf \\7}", 
+    x = xt)
+} else {
+  xt_mod <- xt
+}
+cat(xt_mod, sep="\n")
+@
+
+
+%%Aktivitāte pa novadiem. Dilstoša tabula. Beigās uzskaitīti novadi,
+%%kuros nekas nenotiek.
+
+
+
+
+
+\section{Salīdzinājums skolām ar līdzīgu urbanizāciju un tipu}
+
+Šajā nodaļā aplūkojam alternatīvu veidu, kā izvērtēt olimpiāžu sasniegumus.
+Šeit nesaskaitām apbalvotās vietas, kā to dara daži citi skolu ārpusklases darba reitingi (apbalvojumu skaits ir ierobežots, turklāt nesalīdzināms dažāda veida olimpiādēm).
+Tai vietā salīdzinām dalības aktivitāti kā arī visu attiecīgās skolas
+Atklātajā matemātikas olimpiādē iegūto punktu skaitu.
+Šoreiz atkal salīdzinām aktivitāti, dalībnieku skaitu, meiteņu skaitu,
+kopīgo savākto punktu skaitu.
+
+Lai iegūtu pārskatus, kuros kaut ko var salīdzināt,
+Rīgas sākumskolas (2 skolas) datus turpmāk skatīsim kopīgā tabulā ar
+Rīgas pamatskolām (14 skolas); lielpilsētu tehnikumus (1 tehnikums) -- kopīgā
+tabulā ar lielpilsētu vidusskolām (41 skola), bet
+lauku sākumskolas (1 skola) -- kopīgā tabulā ar lauku pamatskolām (41 skola).
+Iegūsim pavisam 13 tabulas, kur salīdzinātas skolas, kas līdzinās gan
+pēc urbanizācijas, gan arī pēc skolas tipa. Kuras skolas aplūkojam
+vienādos reitingos, parādīts {\bf Tabulā \ref{tab:urbanSkTypes}}.
+
+<<urbanSkTypes, warning=FALSE, results="asis", echo=FALSE>>=
+mur <- unique(count(resultDf, c("Urbanizacija", "SkTips","Skola")))
+mur <- mutate(mur, Dummy = 1)
+murrr <- count(mur, vars=c("Urbanizacija","SkTips"), wt_var = "Dummy")
+# TODO: Do not remove. Very intriguing error!!!
+#levels(murrr$Urbanizacija) <- c("riga","lielpilseta","pilseta","lauki")
+murrr$Urbanizacija <- factor(murrr$Urbanizacija, levels = c("riga","lielpilseta","pilseta","lauki"))
+
+murrr$SkTips <- factor(murrr$SkTips, levels= c("sakumskola","pamatskola","vidusskola","tehnikums","gimnazija"))
+
+
+murrr <- murrr[with(murrr, order(Urbanizacija, SkTips)),]
+
+murrr <- mutate(murrr, UrbanizacijaDisp = getUrbanizacijaShortDisplay(Urbanizacija))
+
+murrr$Table <- getUrbanTypeTable(murrr$Urbanizacija, murrr$SkTips)
+
+testMatrix2 <- matrix(c(as.character(murrr$UrbanizacijaDisp),
+                       as.character(murrr$SkTips),
+                       as.character(murrr$freq),
+                       as.character(murrr$Table)), ncol = 4)
+xt2 <- xtable(testMatrix2,
+             caption = "AMO skolas-dal\u012Bbnieces pēc urbanizācijas un tipa",
+             label = "tab:urbanSkTypes",
+             align="rllrr")
+names(xt2) <- c("Urbaniz\u0101cija","Tips","Skolu skaits","Rangu tabula")
+xt2 <- capture.output(xt2)
+cat(enc2utf8(xt2), sep="\n")
+@
+
+Jūsu skolai atbilstošā urbanizācijas un skolas tipa reitingu tabula ir 
+{\bf \Sexpr{parUrbAndTips}} 
+(urbanizācija -- ``\Sexpr{parUrbanizacija}'', skolas tips -- ``\Sexpr{parSkolasTipsDisplay}'').
+Sk. {\bf Tabulu \ref{tab:ratingUrbAndTips}}.
+
+<<ratingUrbAndTips, warning=FALSE, results="asis", echo=FALSE>>=
+#parUrbAndTips <- "T13"
+typeRating <- resultDf[resultDf$UrbAndTips == parUrbAndTips,]
+skTypeRating <- aggregate(Summa ~ Skola + Daliba + RegNr + Intensity, typeRating, sum)
+skTypeRating$RegNr <- as.character(skTypeRating$RegNr)
+skTypeRating <- mutate(skTypeRating, AvgSumma = Summa/Daliba)
+skTypeRating <- mutate(skTypeRating, SkolaDisp = getShortName(RegNr))
+skTypeRating <- mutate(skTypeRating, Meitenes = getMeitenesForSkola(RegNr))
+skTypeRating <- skTypeRating[with(skTypeRating, order(-Summa, -Daliba)),]
+
+
+testMatrix2 <- matrix(c(as.character(skTypeRating$SkolaDisp),
+                       as.character(skTypeRating$Summa),
+                       as.character(skTypeRating$Daliba),
+                       as.character(sprintf("%2.2f",skTypeRating$AvgSumma)), 
+                       as.character(sprintf("%2.2f%%", 100*skTypeRating$Intensity)), 
+                       as.character(skTypeRating$Meitenes)), ncol = 6)
+xt2 <- xtable(testMatrix2,
+             caption = "AMO skolu reitings pēc urbanizācijas un tipa",
+             label = "tab:ratingUrbAndTips",
+             align="rlrrrrr")
+names(xt2) <- c("Skola","Punkti","Dal.","Vid.", "Aktiv.","Meitenes")
+
+print(xt2, 
+#  caption.placement = getOption("xtable.caption.placement", "top"), 
+  size = 'footnotesize')
+@
+
+
+\section{Skolas rezultāti katrā no klašu grupām}
+
+Katrai klasei, kurā skola piedalījās, zīmējam punktu histogrammu.
+Histogrammas stabiņus krāsojam atkarībā no skolas adreses urbanizācijas tipa (1 -- Rīga, 
+2 -- cita no 9 lielpilsētām, 3 -- cita pilsēta, 4 -- lauki). Sk. {\bf Attēlus \ref{fig:grades5and6}, 
+\ref{fig:grades7and8}, \ref{fig:grades9and10}, \ref{fig:grades11and12}}. Jūsu skolas
+audzēkņu rezultāti atzīmēti virs histogrammas ar maziem sarkaniem rombiņiem.
+Varam novērot lauku pamatskolu un vidusskolu nelielo darbu skaitu un rezultātus, kas ir krietni 
+zem vidusmēra -- jau sākot ar 7.--8.\ klasi. Iespējams, šo efektu izraisa spējīgāko (vai sociāli labvēlīgāko) 
+skolēnu migrācija uz pilsētām. 
+
+
+<<theLegend, warning=FALSE, echo=FALSE, fig.width=6, fig.height=1.5, fig.cap={ParFigGradeLegends}, dev='CairoPDF'>>=
+old.par <- par(mar = c(0, 0, 0, 0))
+plot(c(100, 200), c(300, 450), type= "n", xlab = "", ylab = "", axes=FALSE)
+rect(100, 300, 110, 310, col = "#F8756D", border = "black", lwd=0.5)
+rect(120, 300, 130, 310, col = "#7CAE00", border = "black", lwd=0.5)
+rect(140, 300, 150, 310, col = "#00BFC3", border = "black", lwd=0.5)
+rect(160, 300, 170, 310, col = "#C67CFF", border = "black", lwd=0.5)
+text(c("lauki", "pils\u0113ta", "lielpils\u0113ta","R\u012Bga"),
+          x = seq(105,165,by=20), y = rep(320,times=4), cex=0.5)
+par(old.par)
+@
+
+<<grades5and6, warning=FALSE, echo=FALSE, fig.width=6, fig.height=2.5, fig.cap={ParFigGradeA}, dev='CairoPDF'>>=
+
+# What level the histogram ends for each class
+classMaxes <- c(0,0,0,0,42,42,43,43,33,33,24,24)
+
+currentGrade <- 5
+fiveDf <- resultDf[resultDf$KlaseFix == currentGrade,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+p1 <- getHistogram(fiveDf, sprintf("%d. klases histogramma",currentGrade),currentGrade) + 
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[currentGrade] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+currentGrade <- 6
+fiveDf <- resultDf[resultDf$KlaseFix == currentGrade,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+p2 <- getHistogram(fiveDf, sprintf("%d. klases histogramma",currentGrade),currentGrade) + 
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[currentGrade] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+multiplot(p1, p2, cols=2)
+@
+
+
+<<grades7and8, warning=FALSE, echo=FALSE, fig.width=6, fig.height=2.5, fig.cap={ParFigGradeB}, dev='CairoPDF'>>=
+currentGrade <- 7
+fiveDf <- resultDf[resultDf$KlaseFix == currentGrade,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+p1 <- getHistogram(fiveDf, sprintf("%d. klases histogramma",currentGrade),currentGrade) + 
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[currentGrade] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+currentGrade <- 8
+fiveDf <- resultDf[resultDf$KlaseFix == currentGrade,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+p2 <- getHistogram(fiveDf, sprintf("%d. klases histogramma",currentGrade),currentGrade) + 
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[currentGrade] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+multiplot(p1, p2, cols=2)
+@
+
+<<grades9and10, warning=FALSE, echo=FALSE, fig.width=6, fig.height=2, fig.cap={ParFigGradeC}, dev='CairoPDF'>>=
+fiveDf <- resultDf[resultDf$KlaseFix == 9,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+
+p1 <- getHistogram(fiveDf, "9. klases histogramma",9) +
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[9] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+fiveDf <- resultDf[resultDf$KlaseFix == 10,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+
+p2 <- getHistogram(fiveDf, "10. klases histogramma",10) +
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[10] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+multiplot(p1, p2, cols=2)
+
+@
+
+<<grades11and12, warning=FALSE, echo=FALSE, fig.width=6, fig.height=1.7, fig.cap={ParFigGradeD}, dev='CairoPDF'>>=
+
+
+
+fiveDf <- resultDf[resultDf$KlaseFix == 11,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+
+p1 <- getHistogram(fiveDf, "11. klases histogramma",11) +
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[11] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+fiveDf <- resultDf[resultDf$KlaseFix == 12,]
+fiveDfBySchool <- fiveDf[fiveDf$Skola == parSkola,] 
+fiveDfBySchool$GradeCount <- theCounter(as.numeric(as.vector(fiveDfBySchool$Summa)))
+
+p2 <- getHistogram(fiveDf, "12. klases histogramma",12) +
+  geom_point(data = fiveDfBySchool, aes(x=Summa, y=classMaxes[12] + (GradeCount+1)*(2/3)), size=2, shape=18, color="#C40000", fill="#C40000")
+
+multiplot(p1, p2, cols=2)
+
+@
+
+
+
+
+\section{Skolas sekmes, risinot dažādu tēmu uzdevumus}
+
+Saskaņā ar olimpiāžu tradīciju ikvienas klases piecu uzdevumu komplekts satur pa vienam uzdevumam no sekojošām tēmām: Algebra (A), \c{G}eometrija (G), Kombinatorika (C), Skaitļu teorija (N) un ``skolas uzdevums'' (S). Katras klases (5.--12.kl.) uzdevumu komplektā iekļautais ``skolas
+uzdevums'' ir tāds, ka atrisināšanai pietiekami izmantot skolā
+apgūstamās prasmes tipveida situācijās.
+
+Šajā sadaļā apkopojam skolas salīdzinošos rezultātus katrā no uzdevumu tēmām.
+
+
+
+\section{Pilnībā izrēķināto uzdevumu īpatsvars}
+
+Sekmīgai dalībai olimpiādē nepietiek ar 
+prasmi risināt uzdevumus vien. Vajadzīgas arī valodu prasmes
+uzdevuma formulējuma saprašanai un atrisinājuma uzrakstīšanai,
+arī rakstura neatlaidība, spēja novest iesākto līdz galam.
+Starp visiem olimpiādē iegūtajiem vērtējumiem 10 un 9 punktu vērtējumi
+(izrēķināts uzdevums vai arī izrēķināts ar nebūtiskām nepilnībām)
+ieņem īpašu vietu. Šajā sadaļā aplūkosim, kādu daļu no visiem vērtētajiem
+uzdevumiem Jūsu skolas pārstāvji atrisinājuši pilnībā.
+Šis rādītājs ļauj saprast risinātāju sagatavošanas līmeni,
+rakstītprasmi un rakstisku eksāmenu kārtošanas kultūru plašā nozīmē.
+Par šīm prasmēm jāpateicas ne vien matemātikas skolotājiem vai pulciņu
+vadītājiem, bet skolas sniegtās izglītības sistemātiskumam.
+
+{\bf Attēlā \ref{fig:completely-solved}} redzama izkliedes diagramma, kas parāda
+skolas pilnībā izrēķināto uzdevumu īpatsvaru un arī aktivitātes līmeni
+(ir dažas skolas, kur pilnībā izrēķināto uzdevumu īpatsvars ir augsts -- līdz pat 80\%,
+tomēr no šīs skolas uz olimpiādi ir atbraucis tikai viens dalībnieks). Jūsu
+skolas rezultāts izcelts ar slīpu krustiņu.
+
+
+<<completely-solved, warning=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap={ParFigCompletelySolved}, dev='CairoPDF'>>=
+pResultDf <- resultDf
+vect1 <- as.numeric(as.vector(pResultDf$U1)) >= 9
+vect2 <- as.numeric(as.vector(pResultDf$U2)) >= 9
+vect3 <- as.numeric(as.vector(pResultDf$U3)) >= 9
+vect4 <- as.numeric(as.vector(pResultDf$U4)) >= 9
+vect5 <- as.numeric(as.vector(pResultDf$U5)) >= 9
+pResultDf$Perfekti <- (0 + vect1 + vect2 + vect3 + vect4 + vect5)
+pNewDf <- aggregate(Perfekti ~ Skola + SkTips, pResultDf, mean)
+
+pNewOtherDf <- aggregate(Intensity ~ Skola, resultDf, mean)
+#pNewDf <- mutate(pNewDf, Berni = function())
+pNewYetOtherDf <- aggregate(Summa ~ Skola, resultDf, mean)
+
+
+pNewDf <- merge(pNewDf, pNewYetOtherDf, by.x = "Skola", by.y = "Skola")
+#pNewDf <- pNewDf[with(pNewDf, order(Perfekti)),]
+
+pNewDf$SkTips <-
+    factor(pNewDf$SkTips,
+           levels = c("sakumskola", "pamatskola", "vidusskola","tehnikums","gimnazija"))
+
+ggplot(pNewDf, aes(x=Summa, y=Perfekti, color=factor(SkTips))) +
+  geom_point(shape=1,size=1,stroke=0.5) +
+  theme(plot.title = element_text(size = 8),
+        text = element_text(size=10),
+        axis.line=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background=element_blank(),
+        panel.border=element_blank(),
+        #legend.position="none",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_line(colour = "darkgray", linetype = "dashed", size=0.3),
+        panel.grid.major.y = element_line(colour = "darkgray", linetype = "solid", size=0.3),
+        plot.background=element_blank()
+  ) +
+  guides(fill = guide_legend(title = "Sk.Tips",
+                             title.theme = element_text(size=8, face="bold", colour = "black", angle = 0))) +
+  scale_colour_hue(l=50) +
+  xlab("Skolas vid\u0113jie punkti") +
+  ylab("'9' un '10' v\u0113rt\u0113jumi vid\u0113ji vien\u0101 darb\u0101")
+@
+
+
+\section{Korelācija starp skolas uzdevumu un kopīgo rezultātu}
+
+\subsection{Korelācija olimpiādes darbu līmenī}
+
+
+{\bf Tabulā \ref{tab:corrProbTotal}} parādītas visas korelācijas starp dažādu nozaru uzdevumiem
+un attiecīgās klases kopvērtējumu. ``Skolas uzdevumi'' attēloti labajā kolonnā. Mazākā korelācija
+ar koprezultātu ir 6.\ klases skolas uzdevuma vērtējumiem ({\bf 6.1}), savukārt lielākā korelācija ir
+11.\ klases uzdevumam ({\bf 11.1}).
+
+
+<<schoolCorrelationTable, warning=FALSE, results="asis", echo=FALSE>>=
+resultDf = getAllResults()
+
+tmap <- list()
+tmap[["UA"]] <- c(0,0,0,0,3,3,4,3,4,3,3,3)
+tmap[["UG"]] <- c(0,0,0,0,4,5,3,4,3,4,4,4)
+tmap[["UC"]] <- c(0,0,0,0,5,4,5,5,5,5,5,5)
+tmap[["UN"]] <- c(0,0,0,0,2,2,2,2,2,2,2,2)
+tmap[["US"]] <- c(0,0,0,0,1,1,1,1,1,1,1,1)
+
+# 5A, 5G, 5C, 5N, 5S, ...
+allCors <- as.character()
+for (gg in 5:12) {
+  resultDfGrade = resultDf[resultDf$KlaseFix == gg, ]
+  vectAll <- as.vector(resultDfGrade$Summa)
+  for (cc in c("UA","UG","UC","UN","US")) {
+    vectB <- as.numeric(as.vector(resultDfGrade[[cc]]))
+    currentCor <- cor(vectAll,vectB)
+    npk <- tmap[[cc]][gg]
+    allCors <- c(allCors, sprintf("(%d.%d): %1.3f",gg,npk,currentCor))
+  }
+}
+
+dimnames <- list(Klase=5:12, Tema=c("A", "G", "C", "N", "S"))
+
+testMatrix2 <- matrix(allCors, nrow = 8, byrow = TRUE, dimnames = dimnames)
+
+xt2 <- xtable(testMatrix2,
+             caption = "Korel\u0101cija starp uzdevumu un kopv\u0113rt\u0113jumu",
+             label = "tab:corrProbTotal",
+             align="lrrrrr")
+names(xt2) <- c("Algebra","Geometrija","Kombinatorika","Sk.teorija","Sk.Uzdevums")
+xt2 <- capture.output(xt2)
+cat(enc2utf8(xt2), sep="\n")
+
+@
+
+
+\subsection{Korelācija skolu vidējo rezultātu līmenī}
+
+{\bf Attēlā \ref{fig:skola-total-cor}} redzama izkliedes diagramma ar skolu vidējiem rezultātiem
+(``skolas uzdevumā'' iegūtie punkti uz horizontālās ass, kopvērtējuma punkti --
+uz vertikālās ass).
+Šis ir neformāls mē\v{g}inājums saprast, vai olimpiāde kopumā mēra to pašu, ko
+skolas uzdevums.
+
+<<skola-total-cor, warning=FALSE, echo=FALSE, fig.width=6, fig.height=4, fig.cap={parFigB}, dev='CairoPDF'>>=
+resultDf$US <- as.vector(resultDf$US)
+resultDf$US <- as.numeric(resultDf$US)
+resultDf$UA <- as.vector(resultDf$UA)
+resultDf$UA <- as.numeric(resultDf$UA)
+resultDf$UG <- as.vector(resultDf$UG)
+resultDf$UG <- as.numeric(resultDf$UG)
+resultDf$UC <- as.vector(resultDf$UC)
+resultDf$UC <- as.numeric(resultDf$UC)
+resultDf$UN <- as.vector(resultDf$UN)
+resultDf$UN <- as.numeric(resultDf$UN)
+
+corTabFinal <- aggregate(cbind(Summa,US) ~ Skola, resultDf, mean)
+corTabFinal <- mutate(corTabFinal, SkTypes = getSchoolType(Skola))
+
+
+ggplot(corTabFinal, aes(x=US, y=Summa, color=factor(SkTypes))) +
+  geom_point(shape=1,size=1,stroke=0.5) +
+  theme(plot.title = element_text(size = 8),
+        text = element_text(size=10),
+        axis.line=element_blank(),
+        axis.ticks=element_blank(),
+        panel.background=element_blank(),
+        panel.border=element_blank(),
+        #legend.position="none",
+        panel.grid.major.x = element_blank(),
+        panel.grid.minor.y = element_line(colour = "darkgray", linetype = "dashed", size=0.3),
+        panel.grid.major.y = element_line(colour = "darkgray", linetype = "solid", size=0.3),
+        plot.background=element_blank()
+  ) +
+  guides(fill = guide_legend(title = "Sk.Tips",
+                             title.theme = element_text(size=8, face="bold", colour = "black", angle = 0))) +
+#  scale_fill_discrete(breaks=c(1,2),
+#    labels=c("Nav re\u01E7istr\u0113ta", "Re\u01E7istr\u0113ta")) +
+  scale_colour_hue(l=50) +
+#  geom_smooth(method=lm, se=FALSE, fullrange=TRUE) +
+#  labs(title = "Korel\u0101cija starp skolas uzd. un summu") +
+  xlab("Skolas uzdevuma punkti") +
+  ylab("Visu punktu summa")
+@
+
+
+
+\pagebreak
+\phantom{abc}
+
+\begin{thebibliography}{9}
+
+\bibitem{NCES2015} The National Center for Education Statistics (NCES). {\em School Composition and the
+Black–White Achievement Gap: Methodology Companion}. U.S. Department of Education. June 2015.
+Lejuplādēts 2016-05-29 no
+\url{https://nces.ed.gov/nationsreportcard/subject/studies/pdf/school_composition_and_the_bw_achievement_gap_2015_methodology.pdf}
+
+\bibitem{Reardon2007} Reardon, S.F. {\em  Thirteen Ways of Looking at the Black-White Test Score Gap}
+(Working Paper No. 2008-08). Palo Alto, CA: Stanford University.
+Lejuplādēts 2016-05-29, no \url{http://steinhardt.nyu.edu/scmsAdmin/uploads/001/766/24\%20reardon\%20black-white\%20gap\%20march\%202007.pdf}
+
+\bibitem{IZM2016} Izglītības un zinātnes ministrija. {\em Izglītojamo skaita sadalījums pēc mācību valodas vispārizglītojošās dienas mācību programmās 2015./2016.m.g.}. Lejuplādēts 2016-05-29, no \url{http://izm.gov.lv/lv/publikacijas-un-statistika/statistika-par-izglitibu/statistika-par-visparejo-izglitibu/2015-2016-m-g}
+
+\bibitem{IZM2016Kontakti} Izglītības un zinātnes ministrija. {\em Vispārizglītojošo skolu kontaktinformācija}. Lejuplādēts 2016-05-29, no \url{http://izm.gov.lv/lv/publikacijas-un-statistika/statistika-par-izglitibu/statistika-par-visparejo-izglitibu/2015-2016-m-g}
+
+\end{thebibliography}
+
+
+
+\end{document}
